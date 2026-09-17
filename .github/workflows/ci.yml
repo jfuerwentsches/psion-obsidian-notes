@@ -26,6 +26,8 @@ jobs:
   build-app:
     name: Build PsiVault.app
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # release upload on v* tags
     steps:
       - uses: actions/checkout@v4
       - name: Install Lua and OpoLua
