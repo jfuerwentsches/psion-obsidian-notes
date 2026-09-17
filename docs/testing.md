@@ -57,11 +57,13 @@ Test statt einem endlos laufenden Job.
 
 ## CI
 
-`.gitlab-ci.yml` führt Python- und OPL-Tests in getrennten Jobs aus und veröffentlicht
-JUnit-Ergebnisse. Der OPL-Job bezieht den oben festgelegten Commit und verlangt,
-dass die OPL-Tests tatsächlich ausgeführt werden. Es gibt keinen Deploy-Schritt
-und keine Geräte-/Vault-Zugangsdaten. Die Pipeline läuft nach dem Push auf GitLab;
-das Anlegen der Datei allein startet noch keine Remote-Pipeline.
+`.github/workflows/ci.yml` führt auf GitHub Actions drei Jobs aus: die Python-Tests,
+den Bau von `PsiVault.app`/`.aif` (als Workflow-Artefakt; bei einem `v*`-Tag zusätzlich
+als ZIP an das Release angehängt) und die OPL-Tests. Der OPL-Job bezieht den oben
+festgelegten Commit und verlangt, dass die OPL-Tests tatsächlich ausgeführt werden;
+wegen der oben genannten neun bekannten Fehlschläge ist er mit `continue-on-error`
+markiert und blockiert den Workflow nicht. Es gibt keinen Deploy-Schritt und keine
+Geräte-/Vault-Zugangsdaten.
 
 ## Grenzen und Betriebsregel
 

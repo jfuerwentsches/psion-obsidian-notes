@@ -100,6 +100,12 @@ configuration files. Details: [widget README](contrib/omarchy/README.md).
 Browser, Markdown viewer with tables and wikilinks, editor, full-text search,
 new notes and delete. The app is not required for syncing: the notes are plain
 text files on the Psion and can also be opened with the built-in Word app.
+
+A prebuilt `PsiVault.app` + `PsiVault.aif` is attached to each
+[GitHub release](https://github.com/jfuerwentsches/psion-obsidian-notes/releases);
+copy both to `C:\System\Apps\PsiVault\` on the device (see the
+[app README](app/README.md#device)).
+
 Usage, building with OpoLua and installing on the device:
 [app README](app/README.md). The
 [icon package](docs/psion_5mx_appicon_package/README.md) contains the graphic

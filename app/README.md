@@ -33,6 +33,10 @@ full-text search, creating and deleting notes.
 
 ## Building
 
+Prebuilt binaries: every [GitHub release](https://github.com/jfuerwentsches/psion-obsidian-notes/releases)
+ships `PsiVault-vX.Y.Z.zip` with `PsiVault.app` and `PsiVault.aif`; skip to
+[Device](#device) if you only want to install the app.
+
 Requires Lua 5.4 and a checkout of OpoLua from <https://github.com/inseven/opolua>
 (tested with commit `6bb10d5b60ce94abea20b9e1f0abb61d33218649`; the Qt runtime and
 submodules are only needed for running the app on the desktop):

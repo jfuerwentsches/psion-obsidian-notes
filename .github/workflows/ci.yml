@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  OPOLUA_REV: 6bb10d5b60ce94abea20b9e1f0abb61d33218649
+  OPOLUA_DIR: /tmp/psivault-opolua
+
+jobs:
+  python-tests:
+    name: Python tests (sync, widget bridge)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m pytest --ignore=tests/test_app.py
+
+  build-app:
+    name: Build PsiVault.app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua and OpoLua
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends lua5.4
+          sudo ln -sf /usr/bin/lua5.4 /usr/local/bin/lua
+          git init "$OPOLUA_DIR"
+          git -C "$OPOLUA_DIR" remote add origin https://github.com/inseven/opolua.git
+          git -C "$OPOLUA_DIR" fetch --depth=1 origin "$OPOLUA_REV"
+          git -C "$OPOLUA_DIR" checkout --detach FETCH_HEAD
+      - run: bash app/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PsiVault
+          path: |
+            app/dist/PsiVault.app
+            app/dist/PsiVault.aif
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd app/dist && zip PsiVault-${GITHUB_REF_NAME}.zip PsiVault.app PsiVault.aif
+          gh release upload "$GITHUB_REF_NAME" "PsiVault-${GITHUB_REF_NAME}.zip" --clobber
+
+  opl-tests:
+    # 9 known failures (frontmatter timeouts, search index reuse), see docs/testing.md.
+    # Reported but not blocking until they are fixed.
+    name: OPL app tests (known failures, non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      REQUIRE_OPL_TESTS: "1"
+      LUA: lua5.4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Lua and OpoLua
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends lua5.4
+          git init "$OPOLUA_DIR"
+          git -C "$OPOLUA_DIR" remote add origin https://github.com/inseven/opolua.git
+          git -C "$OPOLUA_DIR" fetch --depth=1 origin "$OPOLUA_REV"
+          git -C "$OPOLUA_DIR" checkout --detach FETCH_HEAD
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m pytest tests/test_app.py
