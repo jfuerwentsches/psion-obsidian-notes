@@ -1,0 +1,4 @@
+REM Example only - adapt UID/name to your app
+APP YourApp,&30000000
+  ICON "appicon.mbm"
+ENDA

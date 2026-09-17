@@ -1,0 +1,10 @@
+[Unit]
+Description=ncpd fuer den Psion 5mx (plptools), folgt dem USB-Seriell-Adapter
+
+[Service]
+ExecStart=%h/.local/bin/ncpd-psion
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

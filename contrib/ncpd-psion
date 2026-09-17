@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Haelt ncpd fuer den Psion am Leben: wartet auf den USB-Seriell-Adapter, startet
+# ncpd im Vordergrund und beendet ihn, wenn der Geraetenode verschwindet oder neu
+# angelegt wird (der Adapter meldet sich beim Abschalten des Psion neu an; ein
+# laufender ncpd haengt dann am toten Handle). systemd startet den Wrapper neu.
+set -u
+# Stabiler ist ein Pfad unter /dev/serial/by-id/ (siehe `ls /dev/serial/by-id/`),
+# gesetzt ueber PSION_SERIAL in einem systemd-Override.
+DEV="${PSION_SERIAL:-/dev/ttyUSB0}"
+BAUD="${PSION_BAUD:-115200}"
+
+until [ -e "$DEV" ]; do sleep 3; done
+inode=$(stat -Lc %i "$DEV")
+echo "ncpd-psion: starte ncpd an $DEV ($BAUD Baud)"
+ncpd -d -e -s "$DEV" -b "$BAUD" &
+pid=$!
+trap 'kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; exit 0' TERM INT
+while kill -0 "$pid" 2>/dev/null; do
+  if [ ! -e "$DEV" ] || [ "$(stat -Lc %i "$DEV" 2>/dev/null)" != "$inode" ]; then
+    echo "ncpd-psion: Geraetenode weg oder neu angelegt, ncpd wird beendet"
+    kill "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    exit 0
+  fi
+  sleep 2
+done
+wait "$pid"
+echo "ncpd-psion: ncpd beendet (Exit $?)"

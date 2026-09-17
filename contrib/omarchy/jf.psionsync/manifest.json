@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "jf.psionsync",
+  "name": "Psion Sync",
+  "version": "1.0.0",
+  "author": "jf",
+  "description": "Obsidian/Psion Sync-Status und manueller Sync",
+  "kinds": ["bar-widget"],
+  "entryPoints": {"barWidget": "PsionSync.qml"},
+  "barWidget": {
+    "displayName": "Psion Sync",
+    "description": "Lokale Änderungen, letzter Sync und Sync per Klick",
+    "category": "Custom",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

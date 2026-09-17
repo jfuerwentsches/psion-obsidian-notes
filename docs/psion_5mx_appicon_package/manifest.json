@@ -1,0 +1,23 @@
+{
+  "target": "Psion Series 5mx / EPOC Release 5",
+  "source": "user supplied crystal logo",
+  "sizes": [
+    24,
+    32,
+    48
+  ],
+  "icon_bpp": 4,
+  "mask_bpp": 1,
+  "grayscale_levels": 16,
+  "mbm_order": [
+    "24 icon",
+    "24 mask",
+    "32 icon",
+    "32 mask",
+    "48 icon",
+    "48 mask"
+  ],
+  "mbm_output": "appicon.mbm",
+  "mbm_build": "bmconv bmconv.cmd",
+  "note": "Original SDK handoff metadata. Current PsiVault builds app/icon/PsiVault.mbm with tools/make_mbm.lua via app/build.sh (OpoLua, inverted masks); BMCONV is optional. See README.md."
+}
