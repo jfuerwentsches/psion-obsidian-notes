@@ -33,10 +33,13 @@ full-text search, creating and deleting notes.
 
 ## Building
 
-OpoLua from <https://github.com/inseven/opolua> (tested with commit
-`6bb10d5b60ce94abea20b9e1f0abb61d33218649`, checked out locally in `/tmp/psivault-opolua`):
+Requires Lua 5.4 and a checkout of OpoLua from <https://github.com/inseven/opolua>
+(tested with commit `6bb10d5b60ce94abea20b9e1f0abb61d33218649`; the Qt runtime and
+submodules are only needed for running the app on the desktop):
 
 ```sh
+git clone https://github.com/inseven/opolua /tmp/psivault-opolua
+git -C /tmp/psivault-opolua checkout 6bb10d5b60ce94abea20b9e1f0abb61d33218649
 OPOLUA_DIR=/tmp/psivault-opolua bash app/build.sh
 ```
 
@@ -73,8 +76,19 @@ docs/psion-notes.md), then run
 
 ## Device
 
-`plpftp put` `PsiVault.app` and `PsiVault.aif` to `System\Apps\PsiVault\`
-(relative path), read them back and `cmp`. The app reads and writes notes under
+With `ncpd` running (see the [project README](../README.md)), copy the two build
+outputs into `C:\System\Apps\PsiVault\`. This plptools version needs paths
+relative to the current directory for `mkdir` and `put`:
+
+```sh
+cd app/dist
+plpftp mkdir 'System\Apps\PsiVault'
+plpftp put PsiVault.app 'System\Apps\PsiVault\PsiVault.app'
+plpftp put PsiVault.aif 'System\Apps\PsiVault\PsiVault.aif'
+plpftp get 'C:\System\Apps\PsiVault\PsiVault.app' check.app && cmp PsiVault.app check.app
+```
+
+The app then appears in the Psion's Extras bar. It reads and writes notes under
 `C:\Vault\` and stores its own state under `C:\System\Apps\PsiVault\`.
 
 Sync setup and Omarchy widget: [project README](../README.md).
