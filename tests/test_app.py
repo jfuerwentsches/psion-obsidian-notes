@@ -78,19 +78,15 @@ def test_app_long_frontmatter_terminates(app_env, length, closing):
     assert (vault / "Long.md").read_bytes() == data
 
 
-def test_app_reuses_search_index_and_rebuilds_after_sync(app_env):
+def test_app_search_reads_files_without_index(app_env):
+    # The search index was tried on the device and dropped (docs/psion-notes.md):
+    # search reads every note each time and must not leave an index behind.
     vault, appdir, run = app_env
     (vault / "Recipe.md").write_bytes(b"Lasagne recipe\r\n")
-    (vault / "_psionsync.gen").write_bytes(b"12")
-    run(SMOKE_FLOW="search_twice", SMOKE_EXPECT_INDEX_WRITES="1", SMOKE_EXPECT_TEXT="Lasagne recipe")
-    first = (appdir / "search.idx").read_bytes()
-    assert first.startswith(b"PSIVAULT-IDX 1 12\r\n")
     run(SMOKE_FLOW="search_twice", SMOKE_EXPECT_INDEX_WRITES="0", SMOKE_EXPECT_TEXT="Lasagne recipe")
-    assert (appdir / "search.idx").read_bytes() == first
     (vault / "Recipe.md").write_bytes(b"Lasagne changed\r\n")
-    (vault / "_psionsync.gen").write_bytes(b"13")
-    run(SMOKE_FLOW="search_twice", SMOKE_EXPECT_INDEX_WRITES="1", SMOKE_EXPECT_TEXT="Lasagne changed")
-    assert (appdir / "search.idx").read_bytes().startswith(b"PSIVAULT-IDX 1 13\r\n")
+    run(SMOKE_FLOW="search_twice", SMOKE_EXPECT_INDEX_WRITES="0", SMOKE_EXPECT_TEXT="Lasagne changed")
+    assert not (appdir / "search.idx").exists()
 
 
 def test_app_new_note_writes_expected_file(app_env):

@@ -986,6 +986,19 @@ PROC peekat$:(off&,n%)
   RETURN s$
 ENDP
 
+REM Offset hinter dem naechsten Zeilenende ab pos& (Dateiende, falls keins).
+REM Noetig fuer uebersprungene Zeilen laenger als das 255-Byte-Lesefenster.
+PROC eol&:(pos&)
+  LOCAL s$(255), nl%
+  WHILE pos&<bufsz&
+    s$=peekat$:(pos&,255)
+    nl%=LOC(s$,CHR$(10))
+    IF nl%>0 : RETURN pos&+nl% : ENDIF
+    pos&=pos&+LEN(s$)
+  ENDWH
+  RETURN pos&
+ENDP
+
 REM ---------------------------------------------------------------- Layout
 
 REM Schriftgroesse (Punkt) je Zeilentyp und Zoomstufe 0..3
@@ -1310,7 +1323,8 @@ PROC laymore:(need%)
       ENDIF
     ENDIF
     IF skip%
-      pos&=pos&+adv& : cont%=0
+      IF full% : pos&=pos&+adv& : ELSE : pos&=eol&:(pos&) : ENDIF
+      cont%=0
       CONTINUE
     ENDIF
     IF t%=KTTable%

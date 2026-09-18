@@ -5,15 +5,15 @@ Sie greifen weder auf den echten Vault noch auf den Psion zu. Die OPL-App wird
 aus dem aktuellen Quelltext in ein temporäres Build-Verzeichnis kompiliert;
 `app/dist/` wird dabei nicht verändert.
 
-## Aktueller Prüflauf – 17.09.2026
+## Aktueller Prüflauf – 18.09.2026
 
-Die Python-Suite mit `--ignore=tests/test_app.py` besteht mit **77 Tests**.
-Im zuletzt ausgeführten Gesamtlauf scheiterten **9 OPL-Tests**: die acht Varianten
-von `test_app_long_frontmatter_terminates` mit jeweils 20 Sekunden Timeout und
-`test_app_reuses_search_index_and_rebuilds_after_sync` mit null statt einer
-erwarteten Index-Neuerstellung. Die Gesamtsuite ist daher nicht grün. Die unten
-beschriebene Abdeckung nennt die vorhandenen Tests, nicht ausschließlich
-bestandene Prüfungen.
+Gesamtsuite grün: **92 Tests** (77 Python, 15 OPL). Die zuvor dokumentierten neun
+OPL-Fehlschläge sind behoben: die acht Varianten von
+`test_app_long_frontmatter_terminates` hingen in einer Endlosschleife des Viewers
+(übersprungene Zeilen ≥ 255 Zeichen ohne Zeilenende im Lesefenster rückten `pos&`
+nicht vor); `test_app_reuses_search_index_and_rebuilds_after_sync` prüfte den
+verworfenen Suchindex und wurde durch `test_app_search_reads_files_without_index`
+ersetzt.
 
 ## Lokal
 
@@ -61,14 +61,11 @@ Das Projekt wird parallel auf GitHub und GitLab gepflegt.
 `.github/workflows/ci.yml` führt auf GitHub Actions drei Jobs aus: die Python-Tests,
 den Bau von `PsiVault.app`/`.aif` (als Workflow-Artefakt; bei einem `v*`-Tag zusätzlich
 als ZIP an das Release angehängt) und die OPL-Tests. Der OPL-Job bezieht den oben
-festgelegten Commit und verlangt, dass die OPL-Tests tatsächlich ausgeführt werden;
-wegen der oben genannten neun bekannten Fehlschläge ist er mit `continue-on-error`
-markiert und blockiert den Workflow nicht. Es gibt keinen Deploy-Schritt und keine
-Geräte-/Vault-Zugangsdaten.
+festgelegten Commit und verlangt, dass die OPL-Tests tatsächlich ausgeführt werden.
+Es gibt keinen Deploy-Schritt und keine Geräte-/Vault-Zugangsdaten.
 
 `.gitlab-ci.yml` führt auf GitLab dieselben Python- und OPL-Tests in getrennten
-Jobs aus und veröffentlicht JUnit-Ergebnisse; der OPL-Job schlägt dort wegen der
-bekannten Fehler fehl.
+Jobs aus und veröffentlicht JUnit-Ergebnisse.
 
 ## Grenzen und Betriebsregel
 

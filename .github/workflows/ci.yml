@@ -55,11 +55,8 @@ jobs:
           gh release upload "$GITHUB_REF_NAME" "PsiVault-${GITHUB_REF_NAME}.zip" --clobber
 
   opl-tests:
-    # 9 known failures (frontmatter timeouts, search index reuse), see docs/testing.md.
-    # Reported but not blocking until they are fixed.
-    name: OPL app tests (known failures, non-blocking)
+    name: OPL app tests
     runs-on: ubuntu-latest
-    continue-on-error: true
     env:
       REQUIRE_OPL_TESTS: "1"
       LUA: lua5.4

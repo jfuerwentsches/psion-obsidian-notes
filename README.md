@@ -121,10 +121,8 @@ sources; the Linux build does not need BMCONV.
 OPOLUA_DIR=/tmp/psivault-opolua REQUIRE_OPL_TESTS=1 .venv/bin/pytest
 ```
 
-Last local test run (2026-09-17): **77 Python tests passed**. In the separate
-full run, **9 OPL app tests failed** (eight frontmatter timeouts and one search
-index test); the full suite is currently not green. Coverage, CI and
-limitations: [test documentation](docs/testing.md).
+Last local test run (2026-09-18): **92 tests passed** (77 Python, 15 OPL).
+Coverage, CI and limitations: [test documentation](docs/testing.md).
 
 The project plan and the device notes are written in German:
 

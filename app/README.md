@@ -60,10 +60,6 @@ The complete automated suite, including the OPL regression tests, runs with
 It builds in temporary directories, checks the results and limits run times.
 Details and CI: [docs/testing.md](../docs/testing.md).
 
-As of 2026-09-17: in the last full run, eight frontmatter tests failed with timeouts,
-as did the search index reuse test. These app tests are still open; the 77 Python
-tests for the sync and the widget bridge pass.
-
 ```sh
 # Create a test vault in device encoding (CP1252/CRLF)
 .venv/bin/psionsync --vault tests/fixtures/vault --state-dir /tmp/st --fake-device /tmp/fake sync --apply

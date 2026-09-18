@@ -33,14 +33,17 @@ tags: [psion, obsidian, sync, opl, plan]
   vorhandenen Fassungen; bei Namenskollisionen wird eine Nummer ergänzt.
 - Unicode-Rückgewinnung berücksichtigt ASCII-Kollisionen und zusätzliche
   doppelte Zeilen; Verluste einzelner Unicode-Zeilen lösen eine Sicherung aus.
-- Viewer-Endlosschleife bei langen Frontmatter-Zeilen behoben; Suchkontext zeigt
-  wieder das erste Zeichen. Die Review-Behauptung zu falschen Suchindex-Header-
-  Offsets war falsch (15/16 sind korrekt); Wiederverwendung ist jetzt getestet.
+- Viewer-Endlosschleife bei übersprungenen Zeilen ≥ 255 Zeichen ohne Zeilenende
+  im Lesefenster (Frontmatter, Code-Zäune, Tabellentrenner) am 2026-09-18 erneut
+  behoben: `laymore:` rückt mit `eol&:` bis hinter das nächste `LF` vor, statt um
+  `adv&=0`. Der Suchindex-Test wurde durch einen Test der Datei-für-Datei-Suche
+  ersetzt (Index ist verworfen, siehe psion-notes). **Der neue Build ist noch nicht
+  auf dem Gerät installiert.**
 - Nach Push nur betroffene Geräteverzeichnisse neu einlesen.
-- **85 Tests lokal bestanden:** 70 Python-Tests und 15 OPL-Tests mit frischem
-  Build in temporären Verzeichnissen, Ergebnisprüfungen und Prozess-Timeouts.
-- `.gitlab-ci.yml` führt beide Suiten aus (OpoLua-Commit festgelegt). Noch keine
-  Remote-Pipeline gestartet und keine dieser Änderungen auf dem Gerät installiert.
+- **92 Tests lokal bestanden (2026-09-18):** 77 Python-Tests und 15 OPL-Tests mit
+  frischem Build in temporären Verzeichnissen, Ergebnisprüfungen und Prozess-Timeouts.
+- CI: `.gitlab-ci.yml` und `.github/workflows/ci.yml` führen beide Suiten aus
+  (OpoLua-Commit festgelegt).
 - Ausführen: `OPOLUA_DIR=/tmp/psivault-opolua REQUIRE_OPL_TESTS=1 .venv/bin/pytest`.
   Weitere Hinweise: [testing.md](testing.md).
 

@@ -21,8 +21,8 @@ from .fsmap import (UnmappablePath, decode_content, device_to_vault, encode_cont
 from .state import FileState, State, from_iso, iso, sha256
 
 CLOCK_FILE = "_psionsync.clock"
-# Generationszähler für die App: steigt bei jedem Sync, der etwas übertragen hat.
-# PsiVault vergleicht ihn mit dem Header seines Suchindex und baut ihn bei Bedarf neu.
+# Generationszähler: steigt bei jedem Sync, der etwas übertragen hat. Gedacht für
+# einen App-Suchindex, der verworfen wurde (docs/psion-notes.md); derzeit ohne Leser.
 GEN_FILE = "_psionsync.gen"
 # Zeitunterschiede unterhalb dieser Schwelle gelten als "gleich" -> Konflikt bleibt offen.
 CONFLICT_TOLERANCE = timedelta(seconds=60)
