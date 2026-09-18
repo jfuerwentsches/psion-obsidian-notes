@@ -252,11 +252,6 @@ BarWidget {
                     }
                 }
 
-                Copy {
-                    text: "„Psion prüfen“ zeigt den geplanten Sync inklusive Psion-Seite, ohne etwas zu ändern."
-                    opacity: 0.55
-                }
-
                 PanelSeparator { foreground: root.foreground }
 
                 Row {
