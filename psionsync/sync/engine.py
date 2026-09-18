@@ -281,9 +281,10 @@ class Engine:
         return str(p.with_name(f"{p.stem} (Konflikt {side} {when:%Y-%m-%d %H%M}){p.suffix}"))
 
     # -- Ausführen ----------------------------------------------------------
-    def apply(self, plan: Plan) -> Report:
+    def apply(self, plan: Plan, progress=None) -> Report:
         """Führt den Plan aus. Bricht beim ersten Transportfehler ab; der State wird
-        nur für tatsächlich abgeschlossene Schritte fortgeschrieben und immer gespeichert."""
+        nur für tatsächlich abgeschlossene Schritte fortgeschrieben und immer gespeichert.
+        ``progress(item)`` wird nach jedem abgeschlossenen Schritt aufgerufen."""
         report = Report()
         # Konfliktkopien zuerst, damit keine Fassung verloren geht, egal wo es abbricht.
         order = sorted(plan.items, key=lambda i: 0 if i.action in (
@@ -294,6 +295,8 @@ class Engine:
                 self._check_preconditions(item.rel, plan)
                 self._apply_item(item, pushed)
                 report.done.append(item)
+                if progress:
+                    progress(item)
             self._refresh_pushed(pushed)
             if any(i.action not in (Action.ADOPT, Action.FORGET) for i in report.done):
                 self.state.generation += 1

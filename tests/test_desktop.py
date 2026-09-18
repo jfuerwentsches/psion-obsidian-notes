@@ -100,3 +100,21 @@ def test_check_plans_with_device_but_changes_nothing(tmp_path, capsys):
     assert (args.fake_device / "C/Vault/Notiz.md").exists()
     assert main(["--vault", str(args.vault), "--state-dir", str(args.state_dir),
                  "--fake-device", str(args.fake_device), "check"]) == 0
+
+
+def test_events_mode_streams_json_lines(tmp_path, capsys):
+    import json
+    args = environment(tmp_path)
+    base = ["--vault", str(args.vault), "--state-dir", str(args.state_dir), "--fake-device", str(args.fake_device), "--events"]
+    assert main(base + ["sync"]) == 0
+    events = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    kinds = [e["event"] for e in events]
+    assert kinds[:2] == ["phase", "phase"]
+    item = next(e for e in events if e["event"] == "item")
+    assert item["action"] == "push" and item["rel"] == "Notiz.md" and item["reason"] == "neu im Vault"
+    assert {"event": "done", "text": "Notiz.md", "action": "push", "rel": "Notiz.md"} in events
+    assert events[-1]["event"] == "result" and events[-1]["status"] == "success"
+    shutil.rmtree(args.vault)
+    assert main(base + ["check"]) == 1
+    events = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert events[-2]["event"] == "error" and "Vault nicht gefunden" in events[-2]["text"]

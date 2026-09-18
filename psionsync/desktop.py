@@ -61,26 +61,59 @@ def status(vault: Path, state_dir: Path) -> dict:
         handle.close()
 
 
+class Output:
+    """Verlauf als Prosa (Terminal) oder als JSON-Zeilen (``--events``, Widget)."""
+
+    def __init__(self, events: bool):
+        self.events = events
+
+    def emit(self, event: str, text: str, **data) -> None:
+        if self.events:
+            print(json.dumps({"event": event, "text": text, **data}, ensure_ascii=False), flush=True)
+        else:
+            print(text, flush=True)
+
+    def plan(self, plan) -> None:
+        if not self.events:
+            print_plan(plan, "sync")
+            return
+        if plan.delta is not None:
+            self.emit("note", f"Zeitkalibrierung: Psion-Zeiten werden um {plan.delta} korrigiert")
+        for rel, reason in plan.skipped:
+            self.emit("skipped", rel, rel=rel, reason=reason)
+        for item in plan.items:
+            self.emit("item", item.rel, action=item.action.value, rel=item.rel, reason=item.reason,
+                      copy=item.conflict_copy)
+        conflicts = sum(item.action.value.startswith("konflikt") for item in plan.items)
+        self.emit("summary", f"{len(plan.transfers)} Übertragung(en) geplant, {len(plan.skipped)} übersprungen, "
+                  f"{conflicts} Konflikt(e)", transfers=len(plan.transfers), skipped=len(plan.skipped),
+                  conflicts=conflicts)
+
+
 def run(args, apply: bool) -> int:
     """Widget-Lauf: ``apply=False`` prüft nur (Plan mit Psion-Seite), ``True`` synchronisiert."""
     what = "Sync" if apply else "Prüfung"
+    out = Output(getattr(args, "events", False))
     handle = lock(args.state_dir)
     if handle is None:
-        print("Ein Widget-Lauf läuft bereits.")
+        out.emit("error", "Ein Widget-Lauf läuft bereits.")
         return 1
     try:
         save_result(args.state_dir, "running", f"{what} läuft")
         if not args.vault.is_dir():
             raise ValueError(f"Vault nicht gefunden: {args.vault}")
-        print("Obsidian ↔ Psion – Verbindung und Änderungen prüfen …", flush=True)
+        out.emit("phase", "Verbindung zum Psion wird aufgebaut …")
         with connect(args) as transport:
+            out.emit("phase", "Änderungen auf beiden Seiten werden verglichen …")
             engine = Engine(args.vault, transport, State.load(args.state_dir))
             plan = engine.plan("sync")
-            print_plan(plan, "sync")
+            out.plan(plan)
             conflicts = sum(item.action.value.startswith("konflikt") for item in plan.items)
             if apply:
-                print("\nSync wird ausgeführt …", flush=True)
-                report = engine.apply(plan)
+                if plan.items:
+                    out.emit("phase", "Sync wird ausgeführt …")
+                report = engine.apply(plan, progress=lambda item: out.emit(
+                    "done", item.rel, action=item.action.value, rel=item.rel))
                 if report.error:
                     raise RuntimeError(report.error)
                 message = f"{len(report.done)} Schritt(e), {conflicts} Konflikt(e), {len(plan.skipped)} übersprungen."
@@ -88,13 +121,15 @@ def run(args, apply: bool) -> int:
                 pulls = sum(item.action.value.endswith("pull") or item.action.value == "rm-vault" for item in plan.items)
                 message = (f"Prüfung: {len(plan.transfers)} Übertragung(en) geplant, davon {pulls} vom Psion; "
                            f"{conflicts} Konflikt(e), {len(plan.skipped)} übersprungen. Nichts geändert.")
-        save_result(args.state_dir, "warning" if conflicts or plan.skipped else "success", message)
-        print(message)
+        status_ = "warning" if conflicts or plan.skipped else "success"
+        save_result(args.state_dir, status_, message)
+        out.emit("result", message, status=status_)
         return 0
     except (Exception, KeyboardInterrupt) as exc:
         message = str(exc) or f"{what} abgebrochen."
         save_result(args.state_dir, "error", message)
-        print(f"ABBRUCH: {message}\nKabel gesteckt und Fernverbindung am Psion (Strg-T) an?", file=sys.stderr)
+        out.emit("error", f"ABBRUCH: {message}")
+        out.emit("note", "Kabel gesteckt und Fernverbindung am Psion (Strg-T) an?")
         return 1
     finally:
         handle.close()
@@ -115,6 +150,7 @@ def main(argv=None) -> int:
     parser.add_argument("--fake-device", type=Path)
     parser.add_argument("command", choices=("status", "sync", "check"))
     parser.add_argument("--hold", action="store_true", help="Terminal nach dem Sync offen halten")
+    parser.add_argument("--events", action="store_true", help="Verlauf als JSON-Zeilen (für das Widget)")
     args = parser.parse_args(argv)
     if args.command == "status":
         try:

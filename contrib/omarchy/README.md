@@ -7,7 +7,9 @@ A click opens the panel with:
 - the number of new, changed and deleted local notes, plus the file list;
 - the result of the last run and hints about errors or conflicts;
 - "Sync now" and "Check Psion";
-- an expandable live log directly in the panel.
+- an expandable live log directly in the panel: phases, one row per note with
+  direction (↑ to Psion, ↓ to vault, ✕ delete, ⚠ conflict) and reason, ticked off
+  as each step completes, then a summary line.
 
 The display refreshes every ten seconds, and every two seconds while the panel is
 open or a run is active. The automatic refresh never touches the device: even when
@@ -39,7 +41,9 @@ that has `psionsync` installed.
 Optional fields on the widget entry in `shell.json` are `vault` and `stateDir`
 (absolute paths). The defaults are `~/Documents/Obsidian/Vault` and
 `~/.local/state/psionsync`. The display stores its result there in
-`desktop-result.json`. The separate lock prevents parallel **widget syncs**; do not
+`desktop-result.json`. The widget runs `psionsync.desktop` with `--events`, which
+streams the log as JSON lines; without the flag the same commands print plain text
+for terminal use. The separate lock prevents parallel **widget syncs**; do not
 start an additional CLI sync at the same time. Nextcloud should not write vault
 files meanwhile. The existing sync preserves conflicts and aborts on transport
 errors; the display never starts syncs automatically.
