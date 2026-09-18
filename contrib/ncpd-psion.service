@@ -1,5 +1,5 @@
 [Unit]
-Description=ncpd fuer den Psion 5mx (plptools), folgt dem USB-Seriell-Adapter
+Description=ncpd fuer den Psion 5mx dauerhaft (optional; psionsync startet ncpd sonst selbst)
 
 [Service]
 ExecStart=%h/.local/bin/ncpd-psion

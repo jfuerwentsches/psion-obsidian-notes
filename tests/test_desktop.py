@@ -70,10 +70,14 @@ def test_disconnected_device_keeps_local_note_and_reports_error(tmp_path, monkey
     from psionsync.transport.base import TransportError
     args = environment(tmp_path)
 
+    from contextlib import contextmanager
+
+    @contextmanager
     def disconnected(_args):
         raise TransportError("Keine Verbindung")
+        yield
 
-    monkeypatch.setattr("psionsync.desktop.make_transport", disconnected)
+    monkeypatch.setattr("psionsync.desktop.connect", disconnected)
     assert sync(args) == 1
     assert (args.vault / "Notiz.md").read_text() == "Hallo\n"
     data = status(args.vault, args.state_dir)

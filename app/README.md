@@ -76,9 +76,10 @@ docs/psion-notes.md), then run
 
 ## Device
 
-With `ncpd` running (see the [project README](../README.md)), copy the two build
-outputs into `C:\System\Apps\PsiVault\`. This plptools version needs paths
-relative to the current directory for `mkdir` and `put`:
+Start `ncpd` (`ncpd -s /dev/ttyUSB0 -b 115200`, adapter path as needed; the
+Psion's link must be on), then copy the two build outputs into
+`C:\System\Apps\PsiVault\`. This plptools version needs paths relative to the
+current directory for `mkdir` and `put`:
 
 ```sh
 cd app/dist
@@ -89,7 +90,9 @@ plpftp get 'C:\System\Apps\PsiVault\PsiVault.app' check.app && cmp PsiVault.app 
 ```
 
 The app then appears in the Psion's Extras bar. It reads and writes notes under
-`C:\Vault\` and stores its own state under `C:\System\Apps\PsiVault\`.
+`C:\Vault\` and stores its own state under `C:\System\Apps\PsiVault\`. Stop
+the manually started `ncpd` afterwards (Ctrl-C), otherwise it keeps waking the
+Psion; `psionsync` manages its own `ncpd`.
 
 Sync setup and Omarchy widget: [project README](../README.md).
 

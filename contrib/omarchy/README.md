@@ -20,9 +20,9 @@ shown as interrupted.
 ## Installation
 
 Prerequisites: the project venv with `psionsync` installed, Omarchy with Quickshell,
-and a working connection via `ncpd`/`plpftp`. Setting up the venv and the device
-connection is described in the [project README](../../README.md). All commands here
-run in the repository directory.
+and `plptools`. Setting up the venv and the device connection is described in the
+[project README](../../README.md); `ncpd` is started by the sync itself and stopped
+afterwards. All commands here run in the repository directory.
 
 ```sh
 python3 contrib/install-omarchy-plugin.py

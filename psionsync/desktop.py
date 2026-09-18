@@ -9,7 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from .cli import DEFAULT_STATE, DEFAULT_VAULT, make_transport, pending, print_plan
+from .cli import DEFAULT_STATE, DEFAULT_VAULT, connect, pending, print_plan
 from .sync.engine import Engine
 from .sync.state import State
 
@@ -71,12 +71,12 @@ def sync(args) -> int:
         if not args.vault.is_dir():
             raise ValueError(f"Vault nicht gefunden: {args.vault}")
         print("Obsidian ↔ Psion – Verbindung und Änderungen prüfen …", flush=True)
-        transport = make_transport(args)
-        engine = Engine(args.vault, transport, State.load(args.state_dir))
-        plan = engine.plan("sync")
-        print_plan(plan, "sync")
-        print("\nSync wird ausgeführt …", flush=True)
-        report = engine.apply(plan)
+        with connect(args) as transport:
+            engine = Engine(args.vault, transport, State.load(args.state_dir))
+            plan = engine.plan("sync")
+            print_plan(plan, "sync")
+            print("\nSync wird ausgeführt …", flush=True)
+            report = engine.apply(plan)
         if report.error:
             raise RuntimeError(report.error)
         conflicts = sum(item.action.value.startswith("konflikt") for item in plan.items)

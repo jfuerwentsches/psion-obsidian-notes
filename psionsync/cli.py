@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -38,15 +40,32 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def make_transport(args):
+# Nach dem Start von ncpd braucht der Psion einen Moment zum Aufwachen und Verbinden.
+CONNECT_TIMEOUT = 20.0
+
+
+@contextmanager
+def connect(args):
+    """Transport für die Dauer eines Laufs; startet ``ncpd`` bei Bedarf (siehe link.py)."""
     if args.fake_device:
         from .transport.fake import FakeTransport
         args.fake_device.joinpath("C").mkdir(parents=True, exist_ok=True)
-        return FakeTransport(args.fake_device, clock_offset=timedelta(hours=2))
+        yield FakeTransport(args.fake_device, clock_offset=timedelta(hours=2))
+        return
+    from .link import Link
     from .transport.plp import PlpTransport
-    t = PlpTransport()
-    t.check_connection()
-    return t
+    with Link() as link:
+        t = PlpTransport()
+        deadline = time.monotonic() + (CONNECT_TIMEOUT if link.started_here else 0)
+        while True:
+            try:
+                t.check_connection()
+                break
+            except TransportError:
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(1)
+        yield t
 
 
 def print_plan(plan: Plan, mode: str) -> None:
@@ -94,37 +113,37 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"{label:<10} {rel}")
             print(f"{info['pending']} lokale Änderung(en) seit dem letzten Sync")
         return 0
+    if args.command != "backup" and not args.vault.is_dir():
+        print(f"Vault nicht gefunden: {args.vault}", file=sys.stderr)
+        return 2
     try:
-        transport = make_transport(args)
-        if args.command == "backup":
-            n = backup(transport, args.destination, skip_rom=not args.with_rom)
-            print(f"Fertig: {n} Dateien in {args.destination}")
+        with connect(args) as transport:
+            if args.command == "backup":
+                n = backup(transport, args.destination, skip_rom=not args.with_rom)
+                print(f"Fertig: {n} Dateien in {args.destination}")
+                return 0
+            mode = "sync" if args.command == "status" else args.command
+            engine = Engine(args.vault, transport, State.load(args.state_dir))
+            plan = engine.plan(mode)
+            print_plan(plan, mode)
+            if args.command == "status" or not args.apply:
+                if plan.transfers:
+                    print("Dry-Run. Mit --apply ausführen.")
+                return 0
+            if not plan.transfers and not plan.items:
+                return 0
+            started = datetime.now()
+            report = engine.apply(plan)
+            print(f"{len(report.done)} Schritt(e) ausgeführt in {(datetime.now() - started).seconds}s")
+            if report.error:
+                print(f"ABBRUCH: {report.error}", file=sys.stderr)
+                print("State wurde für die abgeschlossenen Schritte gespeichert.", file=sys.stderr)
+                return 1
             return 0
-        if not args.vault.is_dir():
-            print(f"Vault nicht gefunden: {args.vault}", file=sys.stderr)
-            return 2
-        mode = "sync" if args.command == "status" else args.command
-        engine = Engine(args.vault, transport, State.load(args.state_dir))
-        plan = engine.plan(mode)
-        print_plan(plan, mode)
-        if args.command == "status" or not args.apply:
-            if plan.transfers:
-                print("Dry-Run. Mit --apply ausführen.")
-            return 0
-        if not plan.transfers and not plan.items:
-            return 0
-        started = datetime.now()
-        report = engine.apply(plan)
-        print(f"{len(report.done)} Schritt(e) ausgeführt in {(datetime.now() - started).seconds}s")
-        if report.error:
-            print(f"ABBRUCH: {report.error}", file=sys.stderr)
-            print("State wurde für die abgeschlossenen Schritte gespeichert.", file=sys.stderr)
-            return 1
-        return 0
     except TransportError as exc:
         print(f"Transportfehler: {exc}", file=sys.stderr)
-        print("Läuft ncpd (ncpd -s /dev/ttyUSB0 -b 115200) und ist am Psion die Fernverbindung an (Strg-T)?",
-              file=sys.stderr)
+        print("Ist der Psion eingeschaltet, das Kabel gesteckt und die Fernverbindung an (Strg-T)? "
+              "Adapter: PSION_SERIAL (Default /dev/ttyUSB0).", file=sys.stderr)
         return 1
 
 

@@ -7,7 +7,7 @@ aus dem aktuellen Quelltext in ein temporäres Build-Verzeichnis kompiliert;
 
 ## Aktueller Prüflauf – 18.09.2026
 
-Gesamtsuite grün: **92 Tests** (77 Python, 15 OPL). Die zuvor dokumentierten neun
+Gesamtsuite grün: **97 Tests** (82 Python, 15 OPL; `test_link.py` prüft den ncpd-Lebenszyklus mit einem Fake-ncpd). Die zuvor dokumentierten neun
 OPL-Fehlschläge sind behoben: die acht Varianten von
 `test_app_long_frontmatter_terminates` hingen in einer Endlosschleife des Viewers
 (übersprungene Zeilen ≥ 255 Zeichen ohne Zeilenende im Lesefenster rückten `pos&`

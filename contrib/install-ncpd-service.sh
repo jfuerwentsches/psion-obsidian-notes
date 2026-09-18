@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Installiert den ncpd-Wrapper als systemd-User-Service (kein sudo noetig).
+# Optional: psionsync startet ncpd sonst nur fuer die Dauer eines Laufs. Ein dauerhaft
+# laufender ncpd weckt einen Psion mit eingeschalteter Fernverbindung immer wieder auf.
 set -euo pipefail
 here="$(cd -- "$(dirname -- "$0")" && pwd)"
 install -Dm755 "$here/ncpd-psion" "$HOME/.local/bin/ncpd-psion"

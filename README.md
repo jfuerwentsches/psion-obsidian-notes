@@ -39,20 +39,20 @@ python -m venv .venv
 
 On the Psion, open the communication settings (**Ctrl-L** on an English
 device, **Ctrl-T** on a German one, or via the System screen's Tools menu):
-turn the link on, cable, 115200 baud. Then start the link daemon on Linux:
+turn the link on, cable, 115200 baud. The link can stay switched on.
 
-```sh
-ncpd -s /dev/ttyUSB0 -b 115200
-plpftp ls 'C:\'      # should list the Psion's C: drive
-```
+`psionsync` starts `ncpd` itself right before it talks to the device and stops
+it again afterwards. A permanently running `ncpd` keeps the serial control lines
+active and polls the port, which wakes a Psion with the link enabled every time
+it is switched off; running it on demand avoids that. The adapter defaults to
+`/dev/ttyUSB0` at 115200 baud; override with `PSION_SERIAL` (a stable
+`/dev/serial/by-id/...` path works well) and `PSION_BAUD`. If an `ncpd` is
+already running, for example one you started by hand with
+`ncpd -s /dev/ttyUSB0 -b 115200`, it is used and left alone.
 
-Alternatively, `bash contrib/install-ncpd-service.sh` installs a systemd user
-service that waits for the USB adapter and restarts `ncpd` whenever the adapter
-reappears. The default adapter path is `/dev/ttyUSB0`; a stable
-`/dev/serial/by-id/...` path or another baud rate can be set with
-`PSION_SERIAL` and `PSION_BAUD` in a systemd service override
-(`systemctl --user edit ncpd-psion.service`). Do not run a manual `ncpd` and
-the service at the same time.
+The optional systemd user service in `contrib/` (`bash
+contrib/install-ncpd-service.sh`) keeps `ncpd` running permanently instead; use
+it only if you want the link up all the time and accept the wake-ups.
 
 Default vault: `~/Documents/Obsidian/Vault`. Default state directory:
 `~/.local/state/psionsync/`. Pass `--vault DIR` and `--state-dir DIR` before the
@@ -121,7 +121,7 @@ sources; the Linux build does not need BMCONV.
 OPOLUA_DIR=/tmp/psivault-opolua REQUIRE_OPL_TESTS=1 .venv/bin/pytest
 ```
 
-Last local test run (2026-09-18): **92 tests passed** (77 Python, 15 OPL).
+Last local test run (2026-09-18): **97 tests passed** (82 Python, 15 OPL).
 Coverage, CI and limitations: [test documentation](docs/testing.md).
 
 The project plan and the device notes are written in German:

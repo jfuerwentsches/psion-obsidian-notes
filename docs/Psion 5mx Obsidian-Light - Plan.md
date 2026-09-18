@@ -40,7 +40,7 @@ tags: [psion, obsidian, sync, opl, plan]
   ersetzt (Index ist verworfen, siehe psion-notes). **Der neue Build ist noch nicht
   auf dem Gerät installiert.**
 - Nach Push nur betroffene Geräteverzeichnisse neu einlesen.
-- **92 Tests lokal bestanden (2026-09-18):** 77 Python-Tests und 15 OPL-Tests mit
+- **97 Tests lokal bestanden (2026-09-18):** 82 Python-Tests und 15 OPL-Tests mit
   frischem Build in temporären Verzeichnissen, Ergebnisprüfungen und Prozess-Timeouts.
 - CI: `.gitlab-ci.yml` und `.github/workflows/ci.yml` führen beide Suiten aus
   (OpoLua-Commit festgelegt).
@@ -101,7 +101,7 @@ Vor zukünftigen Backups Dokument-Apps wirklich **beenden**, nicht nur zur Syste
 
 1. **Phase-2-Feinschliff am Gerät bestätigt** (Stift, Shortcuts, Tabellen, letzte Position; Ruckeln durch Mehrfachzeichnen behoben).
 2. **Phase 3 fertig und am Gerät bestätigt (2026-09-17):** Editor (`dEDITMULTI`, 8 Zeilen, Strg-S/Esc; ≤ 28 KB komplett, sonst Ausschnitt ab aktueller Zeile; atomares Speichern; Text ist beim Öffnen komplett markiert → Kürzungs-Schutz < 50 %; externe Änderung → Kopie), Volltextsuche Strg-F (~9 s über 112 Notizen), Neue Notiz Strg-N (öffnet im Editor), Löschen Strg-D, Metadaten (Größe, Wörter) in den Titelzeilen, Zoomstufen (Lupen der Seitenleiste, +/−, Menü) für alle Ansichten, App-Icon, Menü Datei/Notiz/Ansicht.
-3. **Phase 4:** (a) ✅ `ncpd`-Autostart als systemd-User-Service (`contrib/ncpd-psion*`, `contrib/install-ncpd-service.sh`), folgt dem USB-Adapter automatisch. (b) Suchindex versucht und **verworfen** (Benutzerentscheidung, Details in psion-notes). (c) ✅ Testnotizen entfernt. (d) Offen: Nextcloud-Statusprüfung vor dem Sync; **Omarchy-Plugin** (Sync-Status anzeigen, Sync anstoßen) – vom Benutzer gewünscht, als Nächstes.
+3. **Phase 4:** (a) ✅ `ncpd` wird seit 2026-09-18 von `psionsync` selbst nur für die Dauer eines Laufs gestartet (`psionsync/link.py`; ein laufender fremder ncpd wird erkannt und benutzt). Grund: der dauerhafte systemd-User-Service (`contrib/ncpd-psion*`, jetzt optional) hielt die Steuerleitungen aktiv und pollte den Port; der Psion ging nach jedem Ausschalten wieder an, zusätzlich verstärkt durch den Neustart des Wrappers bei der Adapter-Neuanmeldung. (b) Suchindex versucht und **verworfen** (Benutzerentscheidung, Details in psion-notes). (c) ✅ Testnotizen entfernt. (d) Offen: Nextcloud-Statusprüfung vor dem Sync; **Omarchy-Plugin** (Sync-Status anzeigen, Sync anstoßen) – vom Benutzer gewünscht, als Nächstes.
 4. **Phase 3 (Plan)**, Browser und Leseansicht. **Lesen ist dem Benutzer wichtiger als Schreiben**; Editor/Suche bleiben Phase 3. Bereits vereinbarte Unicode-Sicherung, Konfliktregeln und Warnung beim Speichern nach externer Änderung gelten unverändert.
 4. Qt-Anzeige bei Gelegenheit visuell abnehmen (Gerätetest ist bestätigt, daher nicht blockierend).
 

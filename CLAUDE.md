@@ -6,12 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Two-way sync between an Obsidian vault (`~/Documents/Obsidian/Vault`, Nextcloud-synced, 112 notes / 554 KB Markdown, no attachments) and a Psion 5mx over serial (`/dev/ttyUSB0`), plus a custom "Obsidian-light" app written in OPL that runs on the Psion. The sync is always initiated from this Linux machine (Omarchy / Arch).
 
-**Phases 0–3 are done and verified on the device (sync tool; app with browser, viewer, tables, zoom, wikilinks, editor, search, new/delete, icon). Phase 4 (comfort: ncpd autostart via udev, Nextcloud check, search index) is next.** The source of truth is `docs/Psion 5mx Obsidian-Light - Plan.md` (German): scope, decisions, phases, gates, module layout and open questions — its "Übergabestand" section is the current handover. Read it before starting work and update it when decisions change. `docs/Psion 5mx Notiz Sync - Plan.md` is the *rejected* earlier approach (syncing into the built-in Notiz/Jotter app); it is kept only for its analysis of the Jotter format and as fallback knowledge — don't build on it.
+**Phases 0–3 are done and verified on the device (sync tool; app with browser, viewer, tables, zoom, wikilinks, editor, search, new/delete, icon). Phase 4 (comfort) is mostly done: ncpd on demand, Omarchy widget; search index rejected; Nextcloud check open.** The source of truth is `docs/Psion 5mx Obsidian-Light - Plan.md` (German): scope, decisions, phases, gates, module layout and open questions — its "Übergabestand" section is the current handover. Read it before starting work and update it when decisions change. `docs/Psion 5mx Notiz Sync - Plan.md` is the *rejected* earlier approach (syncing into the built-in Notiz/Jotter app); it is kept only for its analysis of the Jotter format and as fallback knowledge — don't build on it.
 
 Commands:
 - Sync tool: Python ≥ 3.11, stdlib only at runtime. Setup `python -m venv .venv && .venv/bin/pip install -e . pytest`; tests `.venv/bin/pytest` (fast, no device; fake transport in `psionsync/transport/fake.py`). CLI `.venv/bin/psionsync [--vault DIR] [--state-dir DIR] [--fake-device DIR] status|sync [--apply]|push [--apply]|pull [--apply]|backup DEST`. Dry-run is the default; `status`/dry-run still write `C:\Vault\_psionsync.clock` for time calibration. Never run `sync --apply` against the real vault without checking `status` first.
 - App: `app/build.sh` wraps OpoLua's `bin/compile.lua` (`--aif` for the icon) to produce `app/dist/PsiVault.app`; the OpoLua Qt runtime runs it on the desktop; `plpftp` copies it to `C:\System\Apps\PsiVault\` on the device.
-- Device link: `ncpd -s /dev/ttyUSB0 -b 115200` (Psion: **Ctrl-T** opens "Kommunikation" on the German device, not Ctrl-L; turn the remote link on there), then `plpftp`. plpftp quirks (relative device paths for put/mkdir/rm, relative *local* paths for put/get, errors on stderr with exit code 0, no `touch`/`settime`) are in `docs/psion-notes.md` and encapsulated in `psionsync/transport/plp.py`.
+- Device link: `psionsync` starts `ncpd` itself for the duration of a run and stops it afterwards (`psionsync/link.py`; env `PSION_SERIAL`/`PSION_BAUD`; a permanently running ncpd wakes the Psion whenever it is switched off). For manual `plpftp` work: `ncpd -s /dev/ttyUSB0 -b 115200` (Psion: **Ctrl-T** opens "Kommunikation" on the German device, not Ctrl-L; turn the remote link on there), stop it afterwards. plpftp quirks (relative device paths for put/mkdir/rm, relative *local* paths for put/get, errors on stderr with exit code 0, no `touch`/`settime`) are in `docs/psion-notes.md` and encapsulated in `psionsync/transport/plp.py`.
 
 ## Core design decisions
 
@@ -40,11 +40,11 @@ Phases 1 and 2 are independent and may run in parallel after Gate 0.
 ## Layout
 
 ```
-psionsync/            transport/{base,plp,fake}.py, sync/{fsmap,state,engine}.py, backup.py, cli.py  (done)
+psionsync/            transport/{base,plp,fake}.py, sync/{fsmap,state,engine}.py, link.py, backup.py, cli.py, desktop.py
 app/src/main.opl      single file: index, events, browser, viewer/markdown/tables, links, search, editor
 app/icon/             icon BMPs + PsiVault.mbm (built by tools/make_mbm.lua)
 app/build.sh, app/dist/ (gitignored)
-tests/                test_{fsmap,state,engine,plp,cli}.py, conftest.py (Env helper), fixtures/vault/
+tests/                test_{fsmap,state,engine,plp,cli,link,desktop,app}.py, conftest.py (Env helper), fixtures/vault/
 tools/                throwaway scripts (backup_device.py superseded by `psionsync backup`, smoke_app.lua)
 docs/                 plans, psion-notes.md
 ```
