@@ -161,7 +161,7 @@ BarWidget {
         owner: root
         bar: root.bar
         open: root.menuOpen
-        contentWidth: menu.fittedContentWidth(Style.space(360))
+        contentWidth: menu.fittedContentWidth(Style.space(420))
         contentHeight: menu.fittedContentHeight(menuColumn.implicitHeight)
 
         Flickable {
