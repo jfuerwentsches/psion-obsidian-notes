@@ -3,7 +3,7 @@ import json
 import shutil
 from pathlib import Path
 
-from psionsync.desktop import lock, main, save_result, status, sync
+from psionsync.desktop import check, lock, main, save_result, status, sync
 
 
 def environment(tmp_path):
@@ -83,3 +83,20 @@ def test_disconnected_device_keeps_local_note_and_reports_error(tmp_path, monkey
     data = status(args.vault, args.state_dir)
     assert data["status"] == "error"
     assert "Keine Verbindung" in data["tooltip"]
+
+
+def test_check_plans_with_device_but_changes_nothing(tmp_path, capsys):
+    args = environment(tmp_path)
+    assert check(args) == 0
+    out = capsys.readouterr().out
+    assert "push           Notiz.md" in out
+    assert "Prüfung: 1 Übertragung(en) geplant, davon 0 vom Psion" in out
+    assert not (args.fake_device / "C/Vault/Notiz.md").exists()
+    data = status(args.vault, args.state_dir)
+    assert data["status"] == "success"
+    assert data["text"] == "Psion ↑1", "Prüfung ändert den lokalen Stand nicht"
+    assert "Prüfung:" in data["tooltip"]
+    assert sync(args) == 0
+    assert (args.fake_device / "C/Vault/Notiz.md").exists()
+    assert main(["--vault", str(args.vault), "--state-dir", str(args.state_dir),
+                 "--fake-device", str(args.fake_device), "check"]) == 0

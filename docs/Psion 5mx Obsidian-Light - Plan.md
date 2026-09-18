@@ -21,6 +21,9 @@ tags: [psion, obsidian, sync, opl, plan]
 - `psionsync/desktop.py`: Status, Sperre gegen parallele Widget-Starts und
   persistentes Ergebnis (einschließlich Fehlern, Abbrüchen und Konflikten).
 - Installation und Bedienung: [contrib/omarchy/README.md](../contrib/omarchy/README.md).
+- 2026-09-18: „Aktualisieren“ (nur lokale Statusabfrage, lief ohnehin per Timer) durch
+  „Psion prüfen“ ersetzt: `psionsync.desktop check` = Dry-Run mit Gerät (startet ncpd,
+  weckt den Psion, zeigt den Plan im Verlauf, ändert nichts). Am Gerät verifiziert.
   Die Sperre umfasst nur Widget-Läufe; CLI nicht gleichzeitig verwenden.
 
 ### Review-Nacharbeit und Tests

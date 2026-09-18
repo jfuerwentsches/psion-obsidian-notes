@@ -5,17 +5,18 @@ widget: a sync icon in the bar and a popup with header, status and actions.
 A click opens the panel with:
 
 - the number of new, changed and deleted local notes, plus the file list;
-- the last sync result and hints about errors or conflicts;
-- "Sync now" and "Refresh";
+- the result of the last run and hints about errors or conflicts;
+- "Sync now" and "Check Psion";
 - an expandable live log directly in the panel.
 
 The display refreshes every ten seconds, and every two seconds while the panel is
-open or a sync is running. It does not query the device: even when it says the
-local side is up to date, there may be changes on the Psion. "Sync now" checks the
-connection, builds the plan and runs the two-way sync. The panel can be closed and
-reopened meanwhile. The log stays visible until the next run or until the plugin is
-reloaded. Restarting the shell during a sync can abort it; an incomplete run is then
-shown as interrupted.
+open or a run is active. The automatic refresh never touches the device: even when
+it says the local side is up to date, there may be changes on the Psion. "Check
+Psion" starts `ncpd`, wakes the Psion, computes the full two-way plan including the
+device side and shows it in the log without changing anything. "Sync now" does the
+same and then applies the plan. The panel can be closed and reopened meanwhile. The
+log stays visible until the next run or until the plugin is reloaded. Restarting
+the shell during a run can abort it; an incomplete run is then shown as interrupted.
 
 ## Installation
 

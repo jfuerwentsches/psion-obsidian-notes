@@ -91,8 +91,8 @@ python3 contrib/install-omarchy-plugin.py
 ```
 
 A sync icon in the bar opens a panel in the style of the Homelab widget: local
-changes, last sync result, a sync button and a live log. Changes on the Psion
-are only checked when a sync runs. The installer backs up existing
+changes, the last result, a "Check Psion" button (dry run including the device
+side), a sync button and a live log. The installer backs up existing
 configuration files. Details: [widget README](contrib/omarchy/README.md).
 
 ## PsiVault app

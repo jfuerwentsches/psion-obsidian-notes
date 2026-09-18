@@ -1,4 +1,4 @@
-"""Omarchy bridge: offline status and an explicitly requested sync."""
+"""Omarchy bridge: offline status, a device check (dry run) and an explicitly requested sync."""
 from __future__ import annotations
 
 import argparse
@@ -47,12 +47,12 @@ def status(vault: Path, state_dir: Path) -> dict:
         # A process that disappeared without finishing must not look successful.
         if kind == "running":
             kind = "error"
-            result["message"] = "Letzter Sync wurde unterbrochen. Erneut starten."
+            result["message"] = "Letzter Lauf wurde unterbrochen. Erneut starten."
         count = info["pending"]
         text = "Psion !" if kind in ("error", "warning") else f"Psion ↑{count}" if count else "Psion ✓" if info["last_sync"] else "Psion ?"
         tooltip = (f"Obsidian ↔ Psion\n{count} lokale Änderung(en) · {len(info['skipped'])} übersprungen"
                    f"\nLetzter Sync-Stand: {info['last_sync'] or 'noch nie'}"
-                   "\nPsion-Änderungen werden erst beim Sync geprüft.")
+                   "\nPsion-Seite: „Psion prüfen“ (ändert nichts) oder Sync.")
         if result:
             tooltip += f"\nLetzter Widget-Lauf ({result.get('time', '?')}): {result['message']}"
         tooltip += "\nKlick: Sync-Details öffnen"
@@ -61,13 +61,15 @@ def status(vault: Path, state_dir: Path) -> dict:
         handle.close()
 
 
-def sync(args) -> int:
+def run(args, apply: bool) -> int:
+    """Widget-Lauf: ``apply=False`` prüft nur (Plan mit Psion-Seite), ``True`` synchronisiert."""
+    what = "Sync" if apply else "Prüfung"
     handle = lock(args.state_dir)
     if handle is None:
-        print("Ein Widget-Sync läuft bereits.")
+        print("Ein Widget-Lauf läuft bereits.")
         return 1
     try:
-        save_result(args.state_dir, "running", "Sync läuft")
+        save_result(args.state_dir, "running", f"{what} läuft")
         if not args.vault.is_dir():
             raise ValueError(f"Vault nicht gefunden: {args.vault}")
         print("Obsidian ↔ Psion – Verbindung und Änderungen prüfen …", flush=True)
@@ -75,22 +77,35 @@ def sync(args) -> int:
             engine = Engine(args.vault, transport, State.load(args.state_dir))
             plan = engine.plan("sync")
             print_plan(plan, "sync")
-            print("\nSync wird ausgeführt …", flush=True)
-            report = engine.apply(plan)
-        if report.error:
-            raise RuntimeError(report.error)
-        conflicts = sum(item.action.value.startswith("konflikt") for item in plan.items)
-        message = f"{len(report.done)} Schritt(e), {conflicts} Konflikt(e), {len(plan.skipped)} übersprungen."
+            conflicts = sum(item.action.value.startswith("konflikt") for item in plan.items)
+            if apply:
+                print("\nSync wird ausgeführt …", flush=True)
+                report = engine.apply(plan)
+                if report.error:
+                    raise RuntimeError(report.error)
+                message = f"{len(report.done)} Schritt(e), {conflicts} Konflikt(e), {len(plan.skipped)} übersprungen."
+            else:
+                pulls = sum(item.action.value.endswith("pull") or item.action.value == "rm-vault" for item in plan.items)
+                message = (f"Prüfung: {len(plan.transfers)} Übertragung(en) geplant, davon {pulls} vom Psion; "
+                           f"{conflicts} Konflikt(e), {len(plan.skipped)} übersprungen. Nichts geändert.")
         save_result(args.state_dir, "warning" if conflicts or plan.skipped else "success", message)
         print(message)
         return 0
     except (Exception, KeyboardInterrupt) as exc:
-        message = str(exc) or "Sync abgebrochen."
+        message = str(exc) or f"{what} abgebrochen."
         save_result(args.state_dir, "error", message)
-        print(f"ABBRUCH: {message}\nPsion einschalten und Fernverbindung (Strg-T) prüfen.", file=sys.stderr)
+        print(f"ABBRUCH: {message}\nKabel gesteckt und Fernverbindung am Psion (Strg-T) an?", file=sys.stderr)
         return 1
     finally:
         handle.close()
+
+
+def sync(args) -> int:
+    return run(args, apply=True)
+
+
+def check(args) -> int:
+    return run(args, apply=False)
 
 
 def main(argv=None) -> int:
@@ -98,7 +113,7 @@ def main(argv=None) -> int:
     parser.add_argument("--vault", type=Path, default=DEFAULT_VAULT)
     parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--fake-device", type=Path)
-    parser.add_argument("command", choices=("status", "sync"))
+    parser.add_argument("command", choices=("status", "sync", "check"))
     parser.add_argument("--hold", action="store_true", help="Terminal nach dem Sync offen halten")
     args = parser.parse_args(argv)
     if args.command == "status":
@@ -108,7 +123,7 @@ def main(argv=None) -> int:
             data = {"text": "Psion !", "status": "error", "tooltip": str(exc)}
         print(json.dumps(data, ensure_ascii=False))
         return 0
-    code = sync(args)
+    code = check(args) if args.command == "check" else sync(args)
     if args.hold and sys.stdin.isatty():
         try:
             input("\nEnter schließt dieses Fenster …")

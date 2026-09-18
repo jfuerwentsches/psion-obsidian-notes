@@ -14,14 +14,16 @@ BarWidget {
     property var result: ({})
     property string output: ""
     property bool showOutput: false
-    readonly property bool busy: syncProc.running || syncState === "running"
+    readonly property bool checking: checkProc.running
+    readonly property bool busy: syncProc.running || checkProc.running || syncState === "running"
     readonly property color foreground: bar ? bar.foreground : Color.foreground
     readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
     readonly property string python: setting("python", "python3")
     readonly property string vault: setting("vault", Quickshell.env("HOME") + "/Documents/Obsidian/Vault")
     readonly property string stateDir: setting("stateDir", Quickshell.env("HOME") + "/.local/state/psionsync")
     readonly property var baseCommand: [python, "-u", "-m", "psionsync.desktop", "--vault", vault, "--state-dir", stateDir]
-    readonly property string headline: busy ? "Synchronisierung läuft …"
+    readonly property string headline: checking ? "Psion wird geprüft …"
+        : busy ? "Synchronisierung läuft …"
         : syncState === "error" ? "Sync prüfen"
         : syncState === "warning" ? "Sync mit Hinweisen"
         : local.pending > 0 ? local.pending + " lokale Änderungen"
@@ -41,6 +43,12 @@ BarWidget {
         output = ""
         showOutput = true
         syncProc.running = true
+    }
+    function startCheck() {
+        if (busy) return
+        output = ""
+        showOutput = true
+        checkProc.running = true
     }
     function formattedTime(value) {
         if (!value) return "Noch nie"
@@ -80,6 +88,18 @@ BarWidget {
         stderr: SplitParser { onRead: function(line) { root.appendOutput(line) } }
         onExited: function(code) {
             if (code !== 0) root.appendOutput("Sync fehlgeschlagen (" + code + ").")
+            root.refresh()
+        }
+    }
+
+    // Dry-Run mit Gerät: startet ncpd, holt den Plan inklusive Psion-Seite, ändert nichts.
+    Process {
+        id: checkProc
+        command: root.baseCommand.concat(["check"])
+        stdout: SplitParser { onRead: function(line) { root.appendOutput(line) } }
+        stderr: SplitParser { onRead: function(line) { root.appendOutput(line) } }
+        onExited: function(code) {
+            if (code !== 0) root.appendOutput("Prüfung fehlgeschlagen (" + code + ").")
             root.refresh()
         }
     }
@@ -203,7 +223,7 @@ BarWidget {
                 }
 
                 Copy {
-                    text: "Änderungen auf dem Psion werden beim Sync geprüft."
+                    text: "„Psion prüfen“ zeigt den geplanten Sync inklusive Psion-Seite, ohne etwas zu ändern."
                     opacity: 0.55
                 }
 
@@ -213,10 +233,11 @@ BarWidget {
                     width: parent.width
                     spacing: Style.space(8)
                     Button {
-                        width: parent.width - refreshButton.width - parent.spacing
-                        text: root.busy ? "Synchronisierung läuft …" : "Jetzt synchronisieren"
+                        width: parent.width - checkButton.width - parent.spacing
+                        text: root.checking ? "Psion wird geprüft …"
+                            : root.busy ? "Synchronisierung läuft …" : "Jetzt synchronisieren"
                         iconText: "󰜉"
-                        iconSpinning: root.busy
+                        iconSpinning: root.busy && !root.checking
                         bordered: true
                         selected: true
                         enabled: !root.busy
@@ -225,13 +246,15 @@ BarWidget {
                         onClicked: root.startSync()
                     }
                     Button {
-                        id: refreshButton
-                        text: "Aktualisieren"
+                        id: checkButton
+                        text: "Psion prüfen"
+                        iconText: "󰍉"
+                        iconSpinning: root.checking
                         bordered: true
                         enabled: !root.busy
                         foreground: root.foreground
                         fontFamily: root.fontFamily
-                        onClicked: root.refresh()
+                        onClicked: root.startCheck()
                     }
                 }
 
